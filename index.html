@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>پیتزای پپرونی واقعیت افزوده</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@0.9.3/build/webxr-polyfill.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+    #start-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 10px 20px;
+      font-size: 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <button id="start-button">شروع واقعیت افزوده</button>
+  <script>
+    let scene, camera, renderer, pizza, pepperoniSlices;
+    const startButton = document.getElementById('start-button');
+
+    // تنظیمات اولیه Three.js
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // ساخت پیتزا (پایه پیتزا)
+    const pizzaGeometry = new THREE.CircleGeometry(5, 32); // دایره برای پایه پیتزا
+    const pizzaMaterial = new THREE.MeshStandardMaterial({ color: 0xF1C27D }); // رنگ نان پیتزا (طلایی)
+    pizza = new THREE.Mesh(pizzaGeometry, pizzaMaterial);
+    pizza.rotation.x = - Math.PI / 2; // چرخاندن پیتزا برای قرارگیری روی زمین
+    scene.add(pizza);
+
+    // ساخت پپرونی‌ها (برش‌های پپرونی)
+    pepperoniSlices = [];
+    for (let i = 0; i < 8; i++) {
+      const pepperoniGeometry = new THREE.CircleGeometry(0.7, 16); // دایره‌های کوچک برای پپرونی
+      const pepperoniMaterial = new THREE.MeshStandardMaterial({ color: 0xB22222 }); // رنگ قرمز پپرونی
+      const pepperoni = new THREE.Mesh(pepperoniGeometry, pepperoniMaterial);
+      
+      // موقعیت‌گذاری برش‌های پپرونی به دور پیتزا
+      pepperoni.position.set(
+        Math.cos(i * Math.PI / 4) * 3.5, // موقعیت X
+        Math.sin(i * Math.PI / 4) * 3.5, // موقعیت Y
+        0.1 // موقعیت Z کمی بالاتر از پیتزا
+      );
+      pepperoni.rotation.x = - Math.PI / 2; // چرخاندن پپرونی‌ها
+      scene.add(pepperoni);
+      pepperoniSlices.push(pepperoni);
+    }
+
+    // نورپردازی
+    const light = new THREE.PointLight(0xFFFFFF, 1, 100);
+    light.position.set(0, 10, 10);
+    scene.add(light);
+
+    // تنظیمات دوربین
+    camera.position.z = 15;
+
+    // تابع انیمیشن
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    // تابع شروع واقعیت افزوده
+    function startAR() {
+      if ('xr' in navigator) {
+        navigator.xr.requestSession("immersive-ar").then((session) => {
+          renderer.xr.enabled = true;
+          renderer.xr.setReferenceSpaceType("local");
+          session.addEventListener("end", () => console.log("WebXR session ended"));
+          session.requestReferenceSpace("local").then((refSpace) => {
+            renderer.xr.setReferenceSpace(refSpace);
+            animate();
+          });
+        }).catch((error) => {
+          console.error("WebXR error:", error);
+        });
+      } else {
+        console.error("WebXR is not supported in this browser.");
+      }
+    }
+
+    // فعال کردن واقعیت افزوده پس از کلیک
+    startButton.addEventListener('click', () => {
+      startButton.style.display = 'none'; // مخفی کردن دکمه بعد از کلیک
+      startAR(); // شروع کردن WebXR
+    });
+
+  </script>
+</body>
+</html>
